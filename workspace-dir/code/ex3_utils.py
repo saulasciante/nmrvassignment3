@@ -8,6 +8,7 @@ def create_cosine_window(target_size):
     # output is a matrix of dimensions: (width, height)
     return cv2.createHanningWindow((target_size[0], target_size[1]), cv2.CV_32F)
 
+
 def create_gauss_peak(target_size, sigma):
     # target size is in the format: (width, height)
     # sigma: parameter (float) of the Gaussian function
