@@ -35,7 +35,7 @@ class CorrFilterTracker(Tracker):
 
         self.window = max(region[2], region[3]) * self.parameters.enlarge_factor
         self.gaussian = create_gauss_peak((int(self.window), int(self.window)), self.parameters.gaussian_sigma)
-        self.resize_dim = self.gaussian.shape
+        self.patch_size = self.gaussian.shape
 
         left = max(region[0], 0)
         top = max(region[1], 0)
@@ -46,19 +46,21 @@ class CorrFilterTracker(Tracker):
         self.template = image[int(top):int(bottom), int(left):int(right)]
         self.position = (region[0] + region[2] / 2, region[1] + region[3] / 2)
         self.size = (region[2], region[3])
-        self.cosine_window = create_cosine_window(self.resize_dim)
+        self.cosine_window = create_cosine_window(self.patch_size)
 
-        patch, _ = get_patch(image, self.position, (self.window, self.window))
-        patch = cv2.resize(patch, self.resize_dim)
-        patch = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
-        patch = np.multiply(patch, self.cosine_window)
+        patch, _ = get_patch(image, self.position, self.patch_size)
 
         # plt.imshow(patch)
         # plt.show()
 
+        patch = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+        patch = np.multiply(patch, self.cosine_window)
+
         self.filter_fft_conj = construct_filter(patch, self.gaussian, self.parameters.filter_lambda)
 
     def track(self, image):
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
         left = max(round(self.position[0] - float(self.window) / 2), 0)
         top = max(round(self.position[1] - float(self.window) / 2), 0)
 
@@ -70,11 +72,8 @@ class CorrFilterTracker(Tracker):
                     self.size[1]], 0
 
         # patch = image[int(top):int(bottom), int(left):int(right)]
-        patch, _ = get_patch(image, self.position, (self.window, self.window))
-        patch = cv2.resize(patch, self.resize_dim)
-        patch = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+        patch, _ = get_patch(image, self.position, self.patch_size)
         patch = np.multiply(patch, self.cosine_window)
-
 
         # LOCALIZATION STEP
         patch_fft = fft2(patch)
@@ -86,7 +85,7 @@ class CorrFilterTracker(Tracker):
             )
         )
 
-        x_max, y_max = np.unravel_index(corr_response.argmax(), corr_response.shape)
+        y_max, x_max = np.unravel_index(corr_response.argmax(), corr_response.shape)
 
         if x_max > patch.shape[0] / 2:
             x_max = x_max - patch.shape[0]
@@ -99,11 +98,8 @@ class CorrFilterTracker(Tracker):
         self.position = (new_x, new_y)
 
         # MODEL UPDATE
-        patch, _ = get_patch(image, self.position, (self.window, self.window))
-        patch = cv2.resize(patch, self.resize_dim)
-        patch = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+        patch, _ = get_patch(image, self.position, self.patch_size)
         patch = np.multiply(patch, self.cosine_window)
-
         new_filter_fft_conj = construct_filter(patch, self.gaussian, self.parameters.filter_lambda)
         self.filter_fft_conj = (1 - self.parameters.update_factor) * self.filter_fft_conj + self.parameters.update_factor * new_filter_fft_conj
 
@@ -115,4 +111,4 @@ class CFParams():
         self.enlarge_factor = 1
         self.gaussian_sigma = 4
         self.filter_lambda = 1
-        self.update_factor = 0.05
+        self.update_factor = 0.3
