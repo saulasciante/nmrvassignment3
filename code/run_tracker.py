@@ -8,8 +8,8 @@ from corr_filter_tracker import CorrFilterTracker, CFParams
 # set the path to directory where you have the sequences
 dataset_path = '../data/vot14/'  # TODO: set to the dataset path on your disk
 # working = bicycle, bolt, car, david, jogging, polarbear, drunk, woman, ...
-# sequences = ['polarbear', 'jogging', 'woman', 'david', 'sunshade']  # choose the sequence you want to test
-sequences = ['bolt']
+# sequences = ['polarbear', 'jogging', 'woman', 'david', 'sunshade', 'drunk']  # choose the sequence you want to test
+sequences = ['fish2']
 
 # visualization and setup parameters
 win_name = 'Tracking window'

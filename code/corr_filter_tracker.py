@@ -108,7 +108,7 @@ class CorrFilterTracker(Tracker):
 
 class CFParams():
     def __init__(self):
-        self.enlarge_factor = 1
-        self.gaussian_sigma = 4
-        self.filter_lambda = 1
-        self.update_factor = 0.3
+        self.enlarge_factor = 1  # best 2
+        self.gaussian_sigma = 4  # best 4
+        self.filter_lambda = 1  # best 1
+        self.update_factor = 0.3  # best 0.3
