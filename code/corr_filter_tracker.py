@@ -3,7 +3,6 @@ import cv2
 import sys
 
 import matplotlib.pyplot as plt
-import matplotlib.colors as mclr
 
 sys.path.append('../toolkit-dir/utils')
 
@@ -67,9 +66,9 @@ class CorrFilterTracker(Tracker):
         right = min(round(self.position[0] + float(self.window) / 2), image.shape[1] - 1)
         bottom = min(round(self.position[1] + float(self.window) / 2), image.shape[0] - 1)
 
-        if right - left < self.template.shape[1] or bottom - top < self.template.shape[0]:
-            return [self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2, self.size[0],
-                    self.size[1]], 0
+        # if right - left < self.template.shape[1] or bottom - top < self.template.shape[0]:
+        #     return [self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2, self.size[0],
+        #             self.size[1]], 0
 
         # patch = image[int(top):int(bottom), int(left):int(right)]
         patch, _ = get_patch(image, self.position, self.patch_size)
