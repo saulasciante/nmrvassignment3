@@ -53,14 +53,3 @@ def get_patch(img, center, sz):
 def show_image(img, delay, title):
     cv2.imshow(title, img)
     cv2.waitKey(delay)
-
-
-class Tracker():
-    def __init__(self, params):
-        self.parameters = params
-
-    def initialize(self, image, region):
-        raise NotImplementedError
-
-    def track(self, image):
-        raise NotImplementedError

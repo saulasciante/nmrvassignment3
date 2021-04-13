@@ -4,9 +4,8 @@ import sys
 
 import matplotlib.pyplot as plt
 
-sys.path.append('../toolkit-dir/utils')
-
-from ex3_utils import get_patch, create_gauss_peak, create_cosine_window, show_image, Tracker
+from ex3_utils import get_patch, create_gauss_peak, create_cosine_window, show_image
+from utils.tracker import Tracker
 from numpy.fft import fft2, ifft2
 
 
@@ -25,15 +24,23 @@ def construct_filter(patch, gaussian, lmbd):
 
 class CorrFilterTracker(Tracker):
 
+    def name(self):
+        return "Corr"
+
     def initialize(self, image, region):
+
+        self.enlarge_factor = 1.1 # best 1
+        self.gaussian_sigma = 2  # best 4
+        self.filter_lambda = 1  # best 1
+        self.update_factor = 0.1  # best 0.2
 
         if len(region) == 8:
             x_ = np.array(region[::2])
             y_ = np.array(region[1::2])
             region = [np.min(x_), np.min(y_), np.max(x_) - np.min(x_) + 1, np.max(y_) - np.min(y_) + 1]
 
-        self.window = max(region[2], region[3]) * self.parameters.enlarge_factor
-        self.gaussian = create_gauss_peak((int(self.window), int(self.window)), self.parameters.gaussian_sigma)
+        self.window = max(region[2], region[3]) * self.enlarge_factor
+        self.gaussian = create_gauss_peak((int(self.window), int(self.window)), self.gaussian_sigma)
         self.patch_size = self.gaussian.shape
 
         left = max(region[0], 0)
@@ -55,7 +62,7 @@ class CorrFilterTracker(Tracker):
         patch = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
         patch = np.multiply(patch, self.cosine_window)
 
-        self.filter_fft_conj = construct_filter(patch, self.gaussian, self.parameters.filter_lambda)
+        self.filter_fft_conj = construct_filter(patch, self.gaussian, self.filter_lambda)
 
     def track(self, image):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -65,10 +72,6 @@ class CorrFilterTracker(Tracker):
 
         right = min(round(self.position[0] + float(self.window) / 2), image.shape[1] - 1)
         bottom = min(round(self.position[1] + float(self.window) / 2), image.shape[0] - 1)
-
-        # if right - left < self.template.shape[1] or bottom - top < self.template.shape[0]:
-        #     return [self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2, self.size[0],
-        #             self.size[1]], 0
 
         # patch = image[int(top):int(bottom), int(left):int(right)]
         patch, _ = get_patch(image, self.position, self.patch_size)
@@ -99,15 +102,7 @@ class CorrFilterTracker(Tracker):
         # MODEL UPDATE
         patch, _ = get_patch(image, self.position, self.patch_size)
         patch = np.multiply(patch, self.cosine_window)
-        new_filter_fft_conj = construct_filter(patch, self.gaussian, self.parameters.filter_lambda)
-        self.filter_fft_conj = (1 - self.parameters.update_factor) * self.filter_fft_conj + self.parameters.update_factor * new_filter_fft_conj
+        new_filter_fft_conj = construct_filter(patch, self.gaussian, self.filter_lambda)
+        self.filter_fft_conj = (1 - self.update_factor) * self.filter_fft_conj + self.update_factor * new_filter_fft_conj
 
-        return [new_x, new_y, self.size[0], self.size[1]]
-
-
-class CFParams():
-    def __init__(self):
-        self.enlarge_factor = 1  # best 2
-        self.gaussian_sigma = 4  # best 4
-        self.filter_lambda = 1  # best 1
-        self.update_factor = 0.3  # best 0.3
+        return [new_x - (self.size[0] / 2), new_y - (self.size[1] / 2), self.size[0], self.size[1]]
